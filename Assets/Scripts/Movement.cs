@@ -12,6 +12,14 @@ public class Movement : MonoBehaviour
     private float _verticalInputRaw;
     private bool _groundTouch;
     private bool _hasDashed;
+    private Vector2 _facingDirection;
+    private Camera _camera;
+    public float horizontalMouseInput;
+    public float verticalMouseInput;
+    public float aimPosition;
+    public Vector2 mousePosition;
+
+    [SerializeField] private Transform aim;
     
     [Space]
     [Header("Stats")]
@@ -42,6 +50,7 @@ public class Movement : MonoBehaviour
     {
         _rigidbody = GetComponent<Rigidbody2D>();
         _collision = GetComponent<Collision>();
+        _camera = Camera.main;
     }
 
     private void Update()
@@ -50,10 +59,19 @@ public class Movement : MonoBehaviour
         _verticalInput = Input.GetAxis("Vertical");
         _horizontalInputRaw = Input.GetAxisRaw("Horizontal");
         _verticalInputRaw = Input.GetAxisRaw("Vertical");
+        horizontalMouseInput = Input.GetAxis("RightStick X");
+        verticalMouseInput = Input.GetAxis("RightStick Y");
         var dir = new Vector2(_horizontalInput, _verticalInput);
+        var position = transform.position;
         
         Walk(dir);
-        
+
+        mousePosition = Input.mousePosition;
+        _facingDirection = _camera.ScreenToWorldPoint(mousePosition) - position;
+        aim.position = position + (Vector3)_facingDirection.normalized;
+
+        aimPosition += horizontalMouseInput * 5 * -Time.deltaTime;
+
         if (_collision.onWall && Input.GetButton("Fire3") && canMove)
         {
             // if(side != _collision.wallSide)
@@ -217,9 +235,9 @@ public class Movement : MonoBehaviour
     
     private void Dash(float x, float y)
     {
-        Camera.main.transform.DOComplete();
-        Camera.main.transform.DOShakePosition(.2f, .5f, 14, 90, false, true);
-        FindObjectOfType<RippleEffect>().Emit(Camera.main.WorldToViewportPoint(transform.position));
+        _camera.transform.DOComplete();
+        _camera.transform.DOShakePosition(.2f, .5f, 14, 90, false, true);
+        FindObjectOfType<RippleEffect>().Emit(_camera.WorldToViewportPoint(transform.position));
 
         _hasDashed = true;
 
