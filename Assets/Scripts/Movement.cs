@@ -32,6 +32,12 @@ public class Movement : MonoBehaviour
     [Space]
     public int side = 1;
     
+    [Space]
+    [Header("Polish")]
+    public ParticleSystem dashParticle;
+    public ParticleSystem jumpParticle;
+    public ParticleSystem wallJumpParticle;
+    
     private void Start()
     {
         _rigidbody = GetComponent<Rigidbody2D>();
@@ -157,10 +163,12 @@ public class Movement : MonoBehaviour
     
     private void Jump(Vector2 dir, bool wall)
     {
+        var particle = wall ? wallJumpParticle : jumpParticle;
         var velocity = _rigidbody.velocity;
         velocity = new Vector2(velocity.x, 0);
         velocity += dir * jumpForce;
         _rigidbody.velocity = velocity;
+        particle.Play();
     }
     
     private void WallSlide()
@@ -204,13 +212,14 @@ public class Movement : MonoBehaviour
     {
         _hasDashed = false;
         isDashing = false;
+        jumpParticle.Play();
     }
     
     private void Dash(float x, float y)
     {
         Camera.main.transform.DOComplete();
         Camera.main.transform.DOShakePosition(.2f, .5f, 14, 90, false, true);
-        // FindObjectOfType<RippleEffect>().Emit(Camera.main.WorldToViewportPoint(transform.position));
+        FindObjectOfType<RippleEffect>().Emit(Camera.main.WorldToViewportPoint(transform.position));
 
         _hasDashed = true;
 
@@ -227,11 +236,10 @@ public class Movement : MonoBehaviour
     
     private IEnumerator DashWait()
     {
-        // FindObjectOfType<GhostTrail>().ShowGhost();
         StartCoroutine(GroundDash());
         DOVirtual.Float(14, 0, 0.8f, RigidbodyDrag);
 
-        // dashParticle.Play();
+        dashParticle.Play();
         _rigidbody.gravityScale = 0;
         GetComponent<BetterJumping>().enabled = false;
         wallJumped = true;
@@ -239,7 +247,7 @@ public class Movement : MonoBehaviour
 
         yield return new WaitForSeconds(0.3f);
 
-        // dashParticle.Stop();
+        dashParticle.Stop();
         _rigidbody.gravityScale = 3;
         GetComponent<BetterJumping>().enabled = true;
         wallJumped = false;
